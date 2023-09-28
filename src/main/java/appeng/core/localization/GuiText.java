@@ -138,6 +138,7 @@ public enum GuiText {
     ETA,
     ETAFormat,
     SwitchCraftingSimulationDisplayMode,
+    PatternCounts,
 
     FromStorage,
     ToCraft,
@@ -146,6 +147,7 @@ public enum GuiText {
     Start,
     Bytes,
     Set,
+    PatternRequests,
 
     CraftingCPU,
     Automatic,
