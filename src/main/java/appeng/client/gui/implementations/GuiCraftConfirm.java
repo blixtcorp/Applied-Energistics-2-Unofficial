@@ -31,6 +31,7 @@ import com.google.common.base.Joiner;
 import appeng.api.AEApi;
 import appeng.api.config.Settings;
 import appeng.api.config.TerminalStyle;
+import appeng.api.implementations.ICraftingPatternItem;
 import appeng.api.storage.ITerminalHost;
 import appeng.api.storage.data.IAEItemStack;
 import appeng.api.storage.data.IItemList;
@@ -123,6 +124,8 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
     private final IItemList<IAEItemStack> storage = AEApi.instance().storage().createItemList();
     private final IItemList<IAEItemStack> pending = AEApi.instance().storage().createItemList();
     private final IItemList<IAEItemStack> missing = AEApi.instance().storage().createItemList();
+    private final IItemList<IAEItemStack> patterned = AEApi.instance().storage().createItemList();
+
     private CraftingJobV2 jobTree = null;
 
     private final List<IAEItemStack> visual = new ArrayList<>();
@@ -139,6 +142,9 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
     private GuiTabButton switchDisplayMode;
     private int tooltip = -1;
     private ItemStack hoveredStack;
+
+    private GuiButton showPatternCount;
+    private boolean shouldShowPatternCount = false;
 
     final GuiScrollbar scrollbar;
 
@@ -211,6 +217,15 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
                 GuiText.CraftingCPU.getLocal() + ": " + GuiText.Automatic);
         this.selectCPU.enabled = false;
         this.buttonList.add(this.selectCPU);
+
+        this.showPatternCount = new GuiButton(
+                0,
+                this.guiLeft + this.xSize/2,
+                this.guiTop + this.ySize - 25,
+                50,
+                20,
+                GuiText.PatternCounts.getLocal());
+        this.buttonList.add(this.showPatternCount);
 
         this.cancel = new GuiButton(
                 0,
@@ -397,6 +412,7 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
                 final IAEItemStack stored = this.storage.findPrecise(refStack);
                 final IAEItemStack pendingStack = this.pending.findPrecise(refStack);
                 final IAEItemStack missingStack = this.missing.findPrecise(refStack);
+                final IAEItemStack patternStack = this.patterned.findPrecise(refStack);
 
                 int lines = 0;
 
@@ -453,7 +469,7 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
                     downY += 5;
                 }
 
-                if (pendingStack != null && pendingStack.getStackSize() > 0) {
+                if (pendingStack != null && pendingStack.getStackSize() > 0 && !shouldShowPatternCount) {
                     String str = GuiText.ToCraft.getLocal() + ": "
                             + ReadableNumberConverter.INSTANCE.toWideReadableForm(pendingStack.getStackSize());
                     final int w = 4 + this.fontRendererObj.getStringWidth(str);
@@ -462,12 +478,24 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
                             (int) ((x * (1 + sectionLength) + xo + sectionLength - 19 - (w * 0.5)) * 2),
                             (y * offY + yo + 6 - negY + downY) * 2,
                             GuiColors.CraftConfirmToCraft.getColor());
+                }
 
-                    if (this.tooltip == z - viewStart) {
-                        lineList.add(
-                                GuiText.ToCraft.getLocal() + ": "
-                                        + NumberFormat.getInstance().format(pendingStack.getStackSize()));
-                    }
+                if (pendingStack != null && pendingStack.getStackSize() > 0 && shouldShowPatternCount) {
+
+                    String str = GuiText.PatternRequests.getLocal()+ ": "
+                            + ReadableNumberConverter.INSTANCE.toWideReadableForm(patternStack.getStackSize());
+                    final int w = 4 + this.fontRendererObj.getStringWidth(str);
+                    this.fontRendererObj.drawString(
+                            str,
+                            (int) ((x * (1 + sectionLength) + xo + sectionLength - 19 - (w * 0.5)) * 2),
+                            (y * offY + yo + 6 - negY + downY) * 2,
+                            GuiColors.CraftConfirmToCraft.getColor());
+                }
+
+                if (this.tooltip == z - viewStart) {
+                    lineList.add(
+                            GuiText.ToCraft.getLocal() + ": "
+                                    + NumberFormat.getInstance().format(pendingStack.getStackSize()));
                 }
 
                 GL11.glPopMatrix();
@@ -766,6 +794,8 @@ public class GuiCraftConfirm extends AEBaseGui implements ICraftingCPUTableHolde
             } catch (final Throwable e) {
                 AELog.debug(e);
             }
+        } else if (btn == this.showPatternCount){
+            shouldShowPatternCount = !shouldShowPatternCount;
         }
     }
 
